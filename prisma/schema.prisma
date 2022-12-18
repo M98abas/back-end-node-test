@@ -1,0 +1,222 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id              Int       @id @default(autoincrement())
+  name            String
+  email           String    @unique
+  password        String
+  created_at      DateTime  @default(now())
+  active          Boolean   @default(true)
+  product_creator Product[] @relation("creator")
+  product_editeor Product[] @relation("editor")
+}
+
+model User {
+  id                 String               @id @default(uuid())
+  fullName           String
+  email              String               @unique
+  password           String
+  address            String
+  phoneNumber        String               @unique
+  description        String               @unique
+  profit             Float?               @default(0.0)
+  type               String               @default("customer")
+  otp                Int                  @default(0000000)
+  verified           Boolean              @default(false)
+  wishlist           Wishlist[]
+  active             Boolean              @default(true)
+  created_at         DateTime             @default(now())
+  updated_at         DateTime             @updatedAt
+  orders             Orders[]
+  rates              UsersProductRate[]
+  notificationObject NotificationObject[]
+}
+
+model PromoCode {
+  id         Int      @id @default(autoincrement())
+  promoCode  String
+  count      Int      @default(0)
+  created_at DateTime @default(now())
+  end_at     DateTime @db.Date
+  active     Boolean  @default(true)
+  persantage Float?
+  profit     Float?
+  userId     String?
+  orders     Orders[]
+}
+
+model Discount {
+  id         Int      @id @default(autoincrement())
+  target     String
+  target_id  Int
+  value      Float
+  created_at DateTime @default(now())
+  end_at     DateTime @db.Date
+  active     Boolean  @default(true)
+}
+
+model Brands {
+  id         Int       @id @default(autoincrement())
+  name       String
+  imgUrl     String
+  created_at DateTime  @default(now())
+  Category   Category? @relation(fields: [categoryId], references: [id])
+  categoryId Int?
+  product    Product[]
+  active     Boolean   @default(true)
+}
+
+model Category {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  imageURl    String
+  created_at  DateTime @default(now())
+  active      Boolean  @default(true)
+  brands      Brands[]
+}
+
+model Fee_data {
+  id     Int     @id @default(autoincrement())
+  fee    Int
+  city   String
+  active Boolean @default(true)
+
+  orders Orders[]
+}
+
+model Product {
+  id              Int                @id @default(autoincrement())
+  name            String
+  dateBuying      DateTime           @db.Date
+  created_at      DateTime           @default(now())
+  updated_at      DateTime           @updatedAt
+  amount          Int
+  priceSell       Int
+  PriceBuy        Int
+  description     String
+  active          Boolean            @default(true)
+  imgURl          Images[]
+  rates           UsersProductRate[]
+  img_primary     String
+  ordersProducts  OrdersProducts[]
+  added_by_admin  Admin              @relation("creator", fields: [added_by], references: [id])
+  added_by        Int
+  edited_by_admin Admin              @relation("editor", fields: [edited_by], references: [id])
+  edited_by       Int
+  sizes           Sizes[]
+  wishlistId      Wishlist[]
+  Brands          Brands             @relation(fields: [brandsId], references: [id])
+  brandsId        Int
+}
+
+model Images {
+  id         Int     @id @default(autoincrement())
+  image_url  String
+  product    Product @relation(fields: [product_id], references: [id])
+  product_id Int
+  active     Boolean @default(true)
+}
+
+model Sizes {
+  id                  Int                   @id @default(autoincrement())
+  sizes_string        String
+  size_number         Int
+  ordersProducts      OrdersProducts[]
+  product_description Product_description[]
+  product             Product               @relation(fields: [product_id], references: [id])
+  product_id          Int
+}
+
+model Product_description {
+  id             Int              @id @default(autoincrement())
+  amount         Int
+  color          String
+  active         Boolean          @default(true)
+  ordersProducts OrdersProducts[]
+
+  Sizes   Sizes? @relation(fields: [sizesId], references: [id])
+  sizesId Int?
+}
+
+model Orders {
+  id             Int              @id @default(autoincrement())
+  address        String
+  created_at     DateTime         @default(now())
+  status         String
+  total_cost     Float
+  active         Boolean          @default(true)
+  ordersProducts OrdersProducts[]
+  User           User?            @relation(fields: [userId], references: [id])
+  userId         String?
+  Fee_data       Fee_data?        @relation(fields: [fee_dataId], references: [id])
+  fee_dataId     Int?
+
+  PromoCode   PromoCode? @relation(fields: [promoCodeId], references: [id])
+  promoCodeId Int?
+}
+
+model OrdersProducts {
+  id                    Int                  @id @default(autoincrement())
+  created_at            DateTime             @default(now())
+  amount                Int
+  sub_total             Float
+  Orders                Orders?              @relation(fields: [ordersId], references: [id])
+  ordersId              Int?
+  Product               Product?             @relation(fields: [productId], references: [id])
+  productId             Int?
+  product_descriptionId Int?
+  sizesId               Int?
+  Sizes                 Sizes?               @relation(fields: [sizesId], references: [id])
+  Product_description   Product_description? @relation(fields: [product_descriptionId], references: [id])
+}
+
+model Wishlist {
+  id         Int      @id @default(autoincrement())
+  amount     Int
+  total_cost Float
+  created_at DateTime @default(now())
+  active     Boolean  @default(true)
+  User       User?    @relation(fields: [userId], references: [id])
+  userId     String?
+  Product    Product? @relation(fields: [productId], references: [id])
+  productId  Int?
+}
+
+model UsersProductRate {
+  id         Int      @id @default(autoincrement())
+  rates      Int
+  created_at DateTime @default(now())
+  Product    Product? @relation(fields: [productId], references: [id])
+  productId  Int?
+  User       User?    @relation(fields: [userId], references: [id])
+  userId     String?
+}
+
+model Notification {
+  id                 Int                  @id @default(autoincrement())
+  created_at         DateTime             @default(now())
+  title              String
+  Description        String
+  active             Boolean              @default(true)
+  NotificationObject NotificationObject[]
+}
+
+model NotificationObject {
+  id             Int           @id @default(autoincrement())
+  User           User?         @relation(fields: [userId], references: [id])
+  userId         String?
+  active         Boolean       @default(true)
+  Notification   Notification? @relation(fields: [notificationId], references: [id])
+  notificationId Int?
+}
